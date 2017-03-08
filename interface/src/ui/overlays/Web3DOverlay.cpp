@@ -37,8 +37,12 @@
 #include <AddressManager.h>
 #include "scripting/AccountScriptingInterface.h"
 #include "scripting/HMDScriptingInterface.h"
+#include "scripting/AssetMappingsScriptingInterface.h"
 #include <Preferences.h>
+#include <ScriptEngines.h>
 #include "FileDialogHelper.h"
+#include "avatar/AvatarManager.h"
+
 
 static const float DPI = 30.47f;
 static const float INCHES_TO_METERS = 1.0f / 39.3701f;
@@ -161,6 +165,10 @@ void Web3DOverlay::loadSourceURL() {
         _webSurface->getRootContext()->setContextProperty("HMD", DependencyManager::get<HMDScriptingInterface>().data());
         _webSurface->getRootContext()->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
         _webSurface->getRootContext()->setContextProperty("Preferences", DependencyManager::get<Preferences>().data());
+        _webSurface->getRootContext()->setContextProperty("Vec3", new Vec3());
+        _webSurface->getRootContext()->setContextProperty("Quat", new Quat());
+        _webSurface->getRootContext()->setContextProperty("MyAvatar", DependencyManager::get<AvatarManager>()->getMyAvatar().get());
+        _webSurface->getRootContext()->setContextProperty("Entities", DependencyManager::get<EntityScriptingInterface>().data());
 
         if (_webSurface->getRootItem() && _webSurface->getRootItem()->objectName() == "tabletRoot") {
             auto tabletScriptingInterface = DependencyManager::get<TabletScriptingInterface>();
@@ -170,6 +178,9 @@ void Web3DOverlay::loadSourceURL() {
             _webSurface->getRootContext()->setContextProperty("Account", AccountScriptingInterface::getInstance());
             _webSurface->getRootContext()->setContextProperty("HMD", DependencyManager::get<HMDScriptingInterface>().data());
             _webSurface->getRootContext()->setContextProperty("fileDialogHelper", new FileDialogHelper());
+            _webSurface->getRootContext()->setContextProperty("ScriptDiscoveryService", DependencyManager::get<ScriptEngines>().data());
+            _webSurface->getRootContext()->setContextProperty("Assets", DependencyManager::get<AssetMappingsScriptingInterface>().data());
+            _webSurface->getRootContext()->setContextProperty("pathToFonts", "../../../");
             tabletScriptingInterface->setQmlTabletRoot("com.highfidelity.interface.tablet.system", _webSurface->getRootItem(), _webSurface.data());
 
             // Override min fps for tablet UI, for silky smooth scrolling
@@ -353,9 +364,8 @@ void Web3DOverlay::handlePointerEvent(const PointerEvent& event) {
     QList<QTouchEvent::TouchPoint> touchPoints;
     touchPoints.push_back(point);
 
-    QTouchEvent* touchEvent = new QTouchEvent(type);
+    QTouchEvent* touchEvent = new QTouchEvent(type, &_touchDevice, event.getKeyboardModifiers());
     touchEvent->setWindow(_webSurface->getWindow());
-    touchEvent->setDevice(&_touchDevice);
     touchEvent->setTarget(_webSurface->getRootItem());
     touchEvent->setTouchPoints(touchPoints);
     touchEvent->setTouchPointStates(touchPointState);
