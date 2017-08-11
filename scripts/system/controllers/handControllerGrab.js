@@ -27,7 +27,7 @@ Script.include("/~/system/libraries/controllers.js");
 // add lines where the hand ray picking is happening
 //
 
-var WANT_DEBUG = false;
+var WANT_DEBUG = true;
 var WANT_DEBUG_STATE = false;
 var WANT_DEBUG_SEARCH_NAME = null;
 
@@ -72,7 +72,9 @@ var EQUIP_SPHERE_SCALE_FACTOR = 0.65;
 
 var WEB_DISPLAY_STYLUS_DISTANCE = 0.5;
 var WEB_STYLUS_LENGTH = 0.2;
-var WEB_TOUCH_Y_OFFSET = 0.05; // how far forward (or back with a negative number) to slide stylus in hand
+var WEB_TOUCH_Y_OFFSET = 0.016; // how far forward (or back with a negative number) to slide stylus in hand
+var WEB_TOUCH_X_OFFSET = 0.059;
+var WEB_TOUCH_Z_OFFSET = 0.0;
 
 //
 // distant manipulation
@@ -1067,6 +1069,7 @@ function MyController(hand) {
     this.autoUnequipCounter = 0;
     this.grabPointIntersectsEntity = false;
     this.stylus = null;
+    this.stylusTipOverlay = null;
     this.homeButtonTouched = false;
     this.editTriggered = false;
 
@@ -1174,8 +1177,17 @@ function MyController(hand) {
             this.stylusTip = getControllerWorldLocation(this.handToController(), true);
 
             // translate tip forward according to constant.
-            var TIP_OFFSET = {x: 0, y: WEB_STYLUS_LENGTH - WEB_TOUCH_Y_OFFSET, z: 0};
+            //(-WEB_STYLUS_LENGTH + WEB_TOUCH_Y_OFFSET)
+	     var xOffset = this.hand === RIGHT_HAND ? WEB_TOUCH_X_OFFSET : -WEB_TOUCH_X_OFFSET;
+            var TIP_OFFSET = {x: -xOffset * 0.15, y: (WEB_STYLUS_LENGTH * 0.50) - WEB_TOUCH_Y_OFFSET, z: WEB_TOUCH_Z_OFFSET};
             this.stylusTip.position = Vec3.sum(this.stylusTip.position, Vec3.multiplyQbyV(this.stylusTip.orientation, TIP_OFFSET));
+
+	    if (WANT_DEBUG) {
+		var updatedProperties = {
+		    position: this.stylusTip.position,
+		}
+		Overlays.editOverlay(this.stylusTipOverlay, updatedProperties);
+	    }
         }
 
         // compute tip velocity from hand controller motion, it is more accurate then computing it from previous positions.
@@ -1350,16 +1362,17 @@ function MyController(hand) {
         if (this.stylus) {
             return;
         }
-
+        var zAngleRotation = this.hand === RIGHT_HAND ? 45 : -45;
+        var xOffset = this.hand === RIGHT_HAND ? WEB_TOUCH_X_OFFSET : -WEB_TOUCH_X_OFFSET;
         var stylusProperties = {
             name: "stylus",
             url: Script.resourcesPath() + "meshes/tablet-stylus-fat.fbx",
             loadPriority: 10.0,
-            localPosition: Vec3.sum({ x: 0.0,
+            localPosition: Vec3.sum({ x: xOffset,
                                       y: WEB_TOUCH_Y_OFFSET,
-                                      z: 0.0 },
+                                      z: WEB_TOUCH_Z_OFFSET},
                                     getGrabPointSphereOffset(this.handToController())),
-            localRotation: Quat.fromVec3Degrees({ x: -90, y: 0, z: 0 }),
+            localRotation: Quat.fromVec3Degrees({ x: -90, y: 0, z: zAngleRotation }),
             dimensions: { x: 0.01, y: 0.01, z: WEB_STYLUS_LENGTH },
             solid: true,
             visible: true,
@@ -1371,6 +1384,21 @@ function MyController(hand) {
                                                      "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND")
         };
         this.stylus = Overlays.addOverlay("model", stylusProperties);
+
+	if (WANT_DEBUG) {
+	    var controller = getControllerWorldLocation(this.handToController(), true);
+	    var stylusTipProperties = {
+		name: "stylusTip",
+		loadPriorty: 10.0,
+		position: controller.position,
+		orientation: controller.orientation,
+		dimensions: {x: 0.01, y: 0.01, z: 0.01},
+		solid: true,
+		visible: true
+	    };
+
+	    this.stylusTipOverlay = Overlays.addOverlay("sphere", stylusTipProperties);
+	}
     };
 
     this.hideStylus = function() {
@@ -1379,6 +1407,10 @@ function MyController(hand) {
         }
         Overlays.deleteOverlay(this.stylus);
         this.stylus = null;
+	if (WANT_DEBUG) {
+	    Overlays.deleteOverlay(this.stylusTipOverlay);
+	    this.stylusTipOverlay = null;
+	}
     };
 
     this.overlayLineOn = function(closePoint, farPoint, color, farParentID) {
