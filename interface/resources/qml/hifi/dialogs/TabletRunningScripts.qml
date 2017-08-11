@@ -47,7 +47,7 @@ Rectangle {
         letterBoxMessage.popupRadius = 0;
         letterBoxMessage.headerGlyphSize = 20
         letterBoxMessage.headerTextMargin = 2
-        letterBoxMessage.headerGlyphMargin = 0
+        letterBoxMessage.headerGlyphMargin = -3
     }
 
     Timer {
@@ -119,7 +119,6 @@ Rectangle {
     }
 
     function reloadScript(script) {
-        console.log(script);
         console.log("Reload script " + script);
         scripts.stopScript(script, true);
     }
