@@ -79,16 +79,20 @@ Script.include("/~/system/libraries/controllers.js");
         parentID: AVATAR_SELF_ID
     };
 
+    var LASER_POINTER_MODE_HOLD = "hold";
+    var LASER_POINTER_MODE_FULL = "full";
+    var LASER_POINTER_MODE_HALF = "half";
+
     var renderStates = [
-        {name: "half", path: halfPath, end: halfEnd},
-        {name: "full", path: fullPath, end: fullEnd},
-        {name: "hold", path: holdPath}
+        { name: LASER_POINTER_MODE_HALF, path: halfPath, end: halfEnd },
+        { name: LASER_POINTER_MODE_FULL, path: fullPath, end: fullEnd },
+        { name: LASER_POINTER_MODE_HOLD, path: holdPath }
     ];
 
     var defaultRenderStates = [
-        {name: "half", distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: halfPath},
-        {name: "full", distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: fullPath},
-        {name: "hold", distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: holdPath}
+        { name: LASER_POINTER_MODE_HALF, distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: halfPath },
+        { name: LASER_POINTER_MODE_FULL, distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: fullPath },
+        { name: LASER_POINTER_MODE_HOLD, distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: holdPath }
     ];
 
     var GRABBABLE_PROPERTIES = [
@@ -130,30 +134,95 @@ Script.include("/~/system/libraries/controllers.js");
             [],
             100);
 
+        this.outlineConfig = Render.getConfig("RenderMainView.OutlineEffect");
+        this.outlinedObjectID = null; // outlined objectID
+        this.outlinedObjectType = null; // outlined object type (btw, why is it required to remove outline?)
+        this.lastLaserPointerMode = LASER_POINTER_MODE_HOLD;
+
+        this.disableOutline = function () {
+            if (this.outlinedObjectID !== null && this.outlinedObjectType !== null) {
+                Selection.removeFromSelectedItemsList("contextOverlayHighlightList", this.outlinedObjectType, this.outlinedObjectID);
+            }
+
+            this.outlinedObjectID = null;
+            this.outlinedObjectType = null;
+        };
+
+        this.enableOutline = function (objectID, objectType, halfOrFull) {
+
+            if (objectID !== null && objectType !== null) {
+
+                var props = Entities.getEntityProperties(objectID, ["marketplaceID"]);
+                var isMarketplaceItem = props.marketplaceID;
+                var outlineColor = halfOrFull === LASER_POINTER_MODE_HALF ? (isMarketplaceItem ? COLORS_GRAB_SEARCHING_HALF_SQUEEZE_MARKET_ITEM : COLORS_GRAB_SEARCHING_HALF_SQUEEZE)
+                    : COLORS_GRAB_SEARCHING_FULL_SQUEEZE;
+
+                this.outlineConfig.colorR = outlineColor.red / 255;
+                this.outlineConfig.colorG = outlineColor.green / 255;
+                this.outlineConfig.colorB = outlineColor.blue / 255;
+
+                Selection.addToSelectedItemsList("contextOverlayHighlightList", objectType, objectID);
+            }
+
+            this.outlinedObjectID = objectID;
+            this.outlinedObjectType = objectType;
+        };
+
+        this.updateOutline = function (intersection, laserPointerMode) {
+            var selectedObjectID = intersection.type !== RayPick.INTERSECTED_NONE ? intersection.objectID : null;
+            var selectedObjectType = null;
+
+            if (laserPointerMode === LASER_POINTER_MODE_HOLD) {
+                this.disableOutline();
+            } else {
+                if (selectedObjectID !== this.outlinedObjectID || laserPointerMode !== this.lastLaserPointerMode) {
+                    if (this.entityWithContextOverlay && (selectedObjectID !== this.outlinedObjectID)) { // entity has context overlay ? keep prev outline
+                        return;
+                    }
+                    if (intersection.type === RayPick.INTERSECTED_ENTITY) {
+                        selectedObjectType = "entity";
+                    } else if (intersection.type === RayPick.INTERSECTED_OVERLAY) {
+                        selectedObjectType = "overlay";
+                    } else if (intersection.type === RayPick.INTERSECTED_AVATAR) {
+                        selectedObjectType = "avatar";
+                    }
+
+                    this.disableOutline();
+                    this.enableOutline(selectedObjectID, selectedObjectType, laserPointerMode);
+                }
+            }
+
+            this.lastLaserPointerMode = laserPointerMode;
+        };
+
         this.updateLaserPointer = function(controllerData) {
             var SEARCH_SPHERE_SIZE = 0.011;
             var MIN_SPHERE_SIZE = 0.0005;
             var radius = Math.max(1.2 * SEARCH_SPHERE_SIZE * this.intersectionDistance, MIN_SPHERE_SIZE);
             var dim = {x: radius, y: radius, z: radius};
-            var mode = "hold";
+            var mode = LASER_POINTER_MODE_HOLD;
             if (!this.distanceHolding && !this.distanceRotating) {
                 if (controllerData.triggerClicks[this.hand]) {
-                    mode = "full";
+                    mode = LASER_POINTER_MODE_FULL;
                 } else {
-                    mode = "half";
+                    mode = LASER_POINTER_MODE_HALF;
                 }
             }
 
             var laserPointerID = PICK_WITH_HAND_RAY ? this.laserPointer : this.headLaserPointer;
-            if (mode === "full") {
+            if (mode === LASER_POINTER_MODE_FULL) {
                 var fullEndToEdit = PICK_WITH_HAND_RAY ? this.fullEnd : fullEnd;
                 fullEndToEdit.dimensions = dim;
                 LaserPointers.editRenderState(laserPointerID, mode, {path: fullPath, end: fullEndToEdit});
-            } else if (mode === "half") {
+            } else if (mode === LASER_POINTER_MODE_HALF) {
                 var halfEndToEdit = PICK_WITH_HAND_RAY ? this.halfEnd : halfEnd;
                 halfEndToEdit.dimensions = dim;
                 LaserPointers.editRenderState(laserPointerID, mode, {path: halfPath, end: halfEndToEdit});
             }
+
+            var intersection = controllerData.rayPicks[this.hand];
+            this.updateOutline(intersection, mode);
+
             LaserPointers.enableLaserPointer(laserPointerID);
             LaserPointers.setRenderState(laserPointerID, mode);
             if (this.distanceHolding || this.distanceRotating) {
@@ -166,6 +235,10 @@ Script.include("/~/system/libraries/controllers.js");
         this.laserPointerOff = function() {
             LaserPointers.disableLaserPointer(this.laserPointer);
             LaserPointers.disableLaserPointer(this.headLaserPointer);
+
+            if (!this.entityWithContextOverlay) { // for some reasons laserPointerOff gets also called right after showing context overlay
+                this.disableOutline();
+            }
         };
 
 
@@ -547,6 +620,8 @@ Script.include("/~/system/libraries/controllers.js");
         this.cleanup = function () {
             LaserPointers.disableLaserPointer(this.laserPointer);
             LaserPointers.removeLaserPointer(this.laserPointer);
+
+            this.disableOutline();
         };
 
         this.halfEnd = halfEnd;
