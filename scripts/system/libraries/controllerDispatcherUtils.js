@@ -76,6 +76,8 @@ COLORS_GRAB_SEARCHING_HALF_SQUEEZE = { red: 10, green: 10, blue: 255 };
 COLORS_GRAB_SEARCHING_FULL_SQUEEZE = { red: 250, green: 10, blue: 10 };
 COLORS_GRAB_DISTANCE_HOLD = { red: 238, green: 75, blue: 214 };
 
+COLORS_GRAB_SEARCHING_HALF_SQUEEZE_MARKET_ITEM = { red: 255, green: 99, blue: 9 }; // value taken from HifiConstants.qml, orangeAccent: "#FF6309"
+
 NEAR_GRAB_RADIUS = 1.0;
 
 DISPATCHER_PROPERTIES = [

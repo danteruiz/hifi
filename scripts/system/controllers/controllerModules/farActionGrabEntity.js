@@ -151,7 +151,11 @@ Script.include("/~/system/libraries/controllers.js");
         this.enableOutline = function (objectID, objectType, halfOrFull) {
 
             if (objectID !== null && objectType !== null) {
-                var outlineColor = halfOrFull === LASER_POINTER_MODE_HALF ? COLORS_GRAB_SEARCHING_HALF_SQUEEZE : COLORS_GRAB_SEARCHING_FULL_SQUEEZE;
+
+                var props = Entities.getEntityProperties(objectID, ["marketplaceID"]);
+                var isMarketplaceItem = props.marketplaceID;
+                var outlineColor = halfOrFull === LASER_POINTER_MODE_HALF ? (isMarketplaceItem ? COLORS_GRAB_SEARCHING_HALF_SQUEEZE_MARKET_ITEM : COLORS_GRAB_SEARCHING_HALF_SQUEEZE) 
+                    : COLORS_GRAB_SEARCHING_FULL_SQUEEZE;
 
                 this.outlineConfig.colorR = outlineColor.red / 255;
                 this.outlineConfig.colorG = outlineColor.green / 255;
@@ -172,6 +176,8 @@ Script.include("/~/system/libraries/controllers.js");
                 this.disableOutline();
             } else {
                 if (selectedObjectID !== this.outlinedObjectID || laserPointerMode !== this.lastLaserPointerMode) {
+                    if (this.entityWithContextOverlay && (selectedObjectID !== this.outlinedObjectID)) // entity has context overlay ? keep prev outline
+                        return;
                     if (intersection.type === RayPick.INTERSECTED_ENTITY) {
                         selectedObjectType = "entity"
                     } else if (intersection.type === RayPick.INTERSECTED_OVERLAY) {
@@ -229,7 +235,8 @@ Script.include("/~/system/libraries/controllers.js");
             LaserPointers.disableLaserPointer(this.laserPointer);
             LaserPointers.disableLaserPointer(this.headLaserPointer);
 
-            this.disableOutline();
+            if(!this.entityWithContextOverlay) // for some reasons laserPointerOff gets also called right after showing context overlay
+                this.disableOutline();
         };
 
 
