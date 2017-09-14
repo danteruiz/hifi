@@ -134,7 +134,7 @@ Script.include("/~/system/libraries/controllers.js");
             [],
             100);
 
-        this.outlineConfig = Render.getConfig("RenderMainView.OutlineEffect")
+        this.outlineConfig = Render.getConfig("RenderMainView.OutlineEffect");
         this.outlinedObjectID = null; // outlined objectID
         this.outlinedObjectType = null; // outlined object type (btw, why is it required to remove outline?)
         this.lastLaserPointerMode = LASER_POINTER_MODE_HOLD;
@@ -146,7 +146,7 @@ Script.include("/~/system/libraries/controllers.js");
 
             this.outlinedObjectID = null;
             this.outlinedObjectType = null;
-        }
+        };
 
         this.enableOutline = function (objectID, objectType, halfOrFull) {
 
@@ -154,19 +154,19 @@ Script.include("/~/system/libraries/controllers.js");
 
                 var props = Entities.getEntityProperties(objectID, ["marketplaceID"]);
                 var isMarketplaceItem = props.marketplaceID;
-                var outlineColor = halfOrFull === LASER_POINTER_MODE_HALF ? (isMarketplaceItem ? COLORS_GRAB_SEARCHING_HALF_SQUEEZE_MARKET_ITEM : COLORS_GRAB_SEARCHING_HALF_SQUEEZE) 
+                var outlineColor = halfOrFull === LASER_POINTER_MODE_HALF ? (isMarketplaceItem ? COLORS_GRAB_SEARCHING_HALF_SQUEEZE_MARKET_ITEM : COLORS_GRAB_SEARCHING_HALF_SQUEEZE)
                     : COLORS_GRAB_SEARCHING_FULL_SQUEEZE;
 
                 this.outlineConfig.colorR = outlineColor.red / 255;
                 this.outlineConfig.colorG = outlineColor.green / 255;
                 this.outlineConfig.colorB = outlineColor.blue / 255;
 
-                Selection.addToSelectedItemsList("contextOverlayHighlightList", objectType, objectID)
+                Selection.addToSelectedItemsList("contextOverlayHighlightList", objectType, objectID);
             }
 
             this.outlinedObjectID = objectID;
             this.outlinedObjectType = objectType;
-        }
+        };
 
         this.updateOutline = function (intersection, laserPointerMode) {
             var selectedObjectID = intersection.type !== RayPick.INTERSECTED_NONE ? intersection.objectID : null;
@@ -176,14 +176,15 @@ Script.include("/~/system/libraries/controllers.js");
                 this.disableOutline();
             } else {
                 if (selectedObjectID !== this.outlinedObjectID || laserPointerMode !== this.lastLaserPointerMode) {
-                    if (this.entityWithContextOverlay && (selectedObjectID !== this.outlinedObjectID)) // entity has context overlay ? keep prev outline
+                    if (this.entityWithContextOverlay && (selectedObjectID !== this.outlinedObjectID)) { // entity has context overlay ? keep prev outline
                         return;
+                    }
                     if (intersection.type === RayPick.INTERSECTED_ENTITY) {
-                        selectedObjectType = "entity"
+                        selectedObjectType = "entity";
                     } else if (intersection.type === RayPick.INTERSECTED_OVERLAY) {
-                        selectedObjectType = "overlay"
+                        selectedObjectType = "overlay";
                     } else if (intersection.type === RayPick.INTERSECTED_AVATAR) {
-                        selectedObjectType = "avatar"
+                        selectedObjectType = "avatar";
                     }
 
                     this.disableOutline();
@@ -235,8 +236,9 @@ Script.include("/~/system/libraries/controllers.js");
             LaserPointers.disableLaserPointer(this.laserPointer);
             LaserPointers.disableLaserPointer(this.headLaserPointer);
 
-            if(!this.entityWithContextOverlay) // for some reasons laserPointerOff gets also called right after showing context overlay
+            if (!this.entityWithContextOverlay) { // for some reasons laserPointerOff gets also called right after showing context overlay
                 this.disableOutline();
+            }
         };
 
 
