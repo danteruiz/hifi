@@ -618,6 +618,8 @@ Script.include("/~/system/libraries/controllers.js");
         this.cleanup = function () {
             LaserPointers.disableLaserPointer(this.laserPointer);
             LaserPointers.removeLaserPointer(this.laserPointer);
+
+            this.disableOutline();
         };
 
         this.halfEnd = halfEnd;
