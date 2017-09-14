@@ -58,6 +58,8 @@ module.exports = {
         "RayPick": false,
         "LaserPointers": false,
         "ContextOverlay": false,
+        "Selection": false,
+        "Render": false,
         "module": false
     },
     "rules": {
