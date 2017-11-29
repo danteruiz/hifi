@@ -61,7 +61,8 @@ Script.include("/~/system/libraries/controllers.js");
 
         this.isPointingAtOverlay = function(controllerData) {
             var intersection = controllerData.rayPicks[this.hand];
-            return intersection.type === Picks.INTERSECTED_OVERLAY;
+            var objectID = intersection.objectID;
+            return (intersection.type === Picks.INTERSECTED_OVERLAY && objectID !== HMD.tabletScreenID && objectID !== HMD.homeButtonID);
         };
 
         this.deleteContextOverlay = function() {
