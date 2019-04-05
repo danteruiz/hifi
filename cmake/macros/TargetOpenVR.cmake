@@ -6,6 +6,7 @@
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 #
 macro(TARGET_OPENVR)
+  message(${VCPKG_INSTALL_ROOT})
     find_library(OPENVR_LIBRARY_RELEASE NAMES openvr_api PATHS ${VCPKG_INSTALL_ROOT}/lib)
     find_library(OPENVR_LIBRARY_DEBUG NAMES openvr_api PATHS ${VCPKG_INSTALL_ROOT}/debug/lib)
     select_library_configurations(OPENVR)
