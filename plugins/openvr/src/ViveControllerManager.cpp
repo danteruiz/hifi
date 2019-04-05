@@ -34,7 +34,7 @@
 #include <plugins/DisplayPlugin.h>
 
 #include <controllers/UserInputMapper.h>
-#include <Plugins/InputConfiguration.h>
+#include <plugins/InputConfiguration.h>
 #include <controllers/StandardControls.h>
 
 extern PoseData _nextSimPoseData;
@@ -984,11 +984,11 @@ void ViveControllerManager::InputDevice::printDeviceTrackingResultChange(uint32_
 }
 
 bool ViveControllerManager::InputDevice::checkForCalibrationEvent() {
-    auto& endOfMap = _buttonPressedMap.end();
-    auto& leftTrigger = _buttonPressedMap.find(controller::LT);
-    auto& rightTrigger = _buttonPressedMap.find(controller::RT);
-    auto& leftAppButton = _buttonPressedMap.find(LEFT_APP_MENU);
-    auto& rightAppButton = _buttonPressedMap.find(RIGHT_APP_MENU);
+    auto endOfMap = _buttonPressedMap.end();
+    auto leftTrigger = _buttonPressedMap.find(controller::LT);
+    auto rightTrigger = _buttonPressedMap.find(controller::RT);
+    auto leftAppButton = _buttonPressedMap.find(LEFT_APP_MENU);
+    auto rightAppButton = _buttonPressedMap.find(RIGHT_APP_MENU);
     return ((leftTrigger != endOfMap && leftAppButton != endOfMap) && (rightTrigger != endOfMap && rightAppButton != endOfMap));
 }
 

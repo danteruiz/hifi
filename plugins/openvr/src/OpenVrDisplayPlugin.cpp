@@ -433,7 +433,7 @@ bool OpenVrDisplayPlugin::internalActivate() {
     auto usingOpenVRForOculus = oculusViaOpenVR();
     _asyncReprojectionActive = (timing.m_nReprojectionFlags & VRCompositor_ReprojectionAsync) || usingOpenVRForOculus;
 
-    _threadedSubmit = !_asyncReprojectionActive;
+    _threadedSubmit = false;//!_asyncReprojectionActive;
     if (usingOpenVRForOculus) {
         qDebug() << "Oculus active via OpenVR:  " << usingOpenVRForOculus;
     }
@@ -726,29 +726,29 @@ int OpenVrDisplayPlugin::getRequiredThreadCount() const {
 }
 
 QString OpenVrDisplayPlugin::getPreferredAudioInDevice() const {
-    QString device = getVrSettingString(vr::k_pch_audio_Section, vr::k_pch_audio_OnPlaybackDevice_String);
+    /*QString device = getVrSettingString(vr::k_pch_audio_Section, vr::k_pch_audio_OnPlaybackDevice_String);
     if (!device.isEmpty()) {
         static const WCHAR INIT = 0;
         size_t size = device.size() + 1;
         std::vector<WCHAR> deviceW;
         deviceW.assign(size, INIT);
         device.toWCharArray(deviceW.data());
-        device = AudioClient::getWinDeviceName(deviceW.data());
-    }
-    return device;
+        device = QString();// = AudioClient::getWinDeviceName(deviceW.data());
+        }*/
+    return QString();
 }
 
 QString OpenVrDisplayPlugin::getPreferredAudioOutDevice() const {
-    QString device = getVrSettingString(vr::k_pch_audio_Section, vr::k_pch_audio_OnRecordDevice_String);
+    /*QString device = getVrSettingString(vr::k_pch_audio_Section, vr::k_pch_audio_OnRecordDevice_String);
     if (!device.isEmpty()) {
         static const WCHAR INIT = 0;
         size_t size = device.size() + 1;
         std::vector<WCHAR> deviceW;
         deviceW.assign(size, INIT);
         device.toWCharArray(deviceW.data());
-        device = AudioClient::getWinDeviceName(deviceW.data());
-    }
-    return device;
+        device = QString();//= AudioClient::getWinDeviceName(deviceW.data());
+        }*/
+    return QString();
 }
 
 QRectF OpenVrDisplayPlugin::getPlayAreaRect() {

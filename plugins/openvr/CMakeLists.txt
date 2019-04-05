@@ -16,5 +16,7 @@ if ((NOT APPLE) AND (NOT USE_GLES))
 
     message("-------->")
     target_openvr()
-    target_link_libraries(${TARGET_NAME} Winmm.lib)
+
+    # Winmm.lib
+    target_link_libraries(${TARGET_NAME})
 endif()
