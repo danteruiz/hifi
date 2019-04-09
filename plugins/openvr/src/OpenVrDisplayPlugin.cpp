@@ -433,7 +433,7 @@ bool OpenVrDisplayPlugin::internalActivate() {
     auto usingOpenVRForOculus = oculusViaOpenVR();
     _asyncReprojectionActive = (timing.m_nReprojectionFlags & VRCompositor_ReprojectionAsync) || usingOpenVRForOculus;
 
-    _threadedSubmit = false;//!_asyncReprojectionActive;
+    _threadedSubmit = !_asyncReprojectionActive;
     if (usingOpenVRForOculus) {
         qDebug() << "Oculus active via OpenVR:  " << usingOpenVRForOculus;
     }
