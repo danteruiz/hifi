@@ -9,6 +9,7 @@
 
 #include <condition_variable>
 #include <queue>
+#include <chrono>
 
 #include <gl/Config.h>
 
@@ -180,6 +181,8 @@ public:
             }
 
             // Execute the frame and present it to the display device.
+            const std::chrono::milliseconds TARGET_RATE(50);
+            auto startTime = std::chrono::system_clock::now();
             _context->makeCurrent();
             {
                 PROFILE_RANGE(render, "PluginPresent")
@@ -189,6 +192,13 @@ public:
                 CHECK_GL_ERROR();
             }
             _context->doneCurrent();
+            auto endTime = std::chrono::system_clock::now();
+            auto duration = endTime - startTime;
+            auto sleepTime = TARGET_RATE.count() - std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+
+            if (sleepTime > 0) {
+                msleep(sleepTime);
+            }
         }
 
         Lock lock(_mutex);
