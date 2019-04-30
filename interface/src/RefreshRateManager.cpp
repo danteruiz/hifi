@@ -71,6 +71,11 @@ std::string RefreshRateManager::uxModeToString(RefreshRateManager::RefreshRateMa
 
 RefreshRateManager::RefreshRateManager() {
     _refreshRateProfile = (RefreshRateManager::RefreshRateProfile) _refreshRateMode.get();
+    _inactiveTimer->setInterval(3000);
+    _inactiveTimer->setSingleShot(true);
+    QObject::connect(_inactiveTimer.get(), &QTimer::timeout, [&] {
+        updateRefreshRateController();
+    });
 }
 
 void RefreshRateManager::setRefreshRateProfile(RefreshRateManager::RefreshRateProfile refreshRateProfile) {
@@ -104,8 +109,25 @@ void RefreshRateManager::setRefreshRateRegime(RefreshRateManager::RefreshRateReg
     if (_refreshRateRegime != refreshRateRegime) {
         _refreshRateRegime = refreshRateRegime;
         updateRefreshRateController();
+
+        if (refreshRateRegime == RefreshRateManager::RefreshRateRegime::RUNNING &&
+            getRefreshRateProfile() == RefreshRateManager::RefreshRateProfile::ECO) {
+            _inactiveTimer->start();
+        }
     }
 
+}
+
+void RefreshRateManager::resetInactiveTimer() {
+    if (getRefreshRateProfile() == RefreshRateManager::RefreshRateProfile::ECO &&
+        _refreshRateRegime == RefreshRateManager::RefreshRateRegime::RUNNING) {
+        _inactiveTimer->start();
+        if (_refreshRateOperator) {
+            _refreshRateOperator(20);
+        }
+    } else if (_inactiveTimer->isActive()) {
+        _inactiveTimer->stop();
+    }
 }
 
 void RefreshRateManager::setUXMode(RefreshRateManager::UXMode uxMode) {

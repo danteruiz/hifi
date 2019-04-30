@@ -4102,6 +4102,12 @@ bool Application::eventFilter(QObject* object, QEvent* event) {
         return true;
     }
 
+    auto eventType = event->type();
+
+    if (eventType == QEvent::KeyPress || eventType == QEvent::KeyRelease || eventType == QEvent::MouseMove) {
+        getRefreshRateManager().resetInactiveTimer();
+    }
+
     if (event->type() == QEvent::Leave) {
         getApplicationCompositor().handleLeaveEvent();
     }
