@@ -34,6 +34,7 @@ typedef enum LoginErrorTypes
 @property (nonatomic, retain) NSString* domainURL;
 @property (nonatomic, retain) NSString* domainContentUrl;
 @property (nonatomic, retain) NSString* domainScriptsUrl;
+@property (nonatomic, retain) NSString* interfaceDownloadUrl;
 @property (nonatomic, retain) DownloadInterface* downloadInterface;
 @property (nonatomic, retain) CredentialsRequest* credentialsRequest;
 @property (nonatomic, retain) DownloadDomainContent* downloadDomainContent;
@@ -72,12 +73,15 @@ typedef enum LoginErrorTypes
 - (void) setDownloadContextFilename:(NSString*) aFilename;
 - (void) setDownloadScriptsFilename:(NSString*) aFilename;
 - (void) setTokenString:(NSString*) aToken;
+- (void) setDownloadUrl:(NSString*) aDownloadUrl;
+- (NSString*) getDownloadUrl;
 - (NSString*) getTokenString;
 - (NSString*) getDownloadContentFilename;
 - (NSString*) getDownloadScriptsFilename;
 - (NSString*) getDownloadFilename;
 - (BOOL) isLoadedIn;
 - (NSString*) getAppPath;
+- (BOOL) isInterfaceRunning;
 
 + (id) sharedLauncher;
 @end

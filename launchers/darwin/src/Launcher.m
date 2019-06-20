@@ -54,11 +54,11 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
     
     SplashScreen* splashScreen = [[SplashScreen alloc] initWithNibName:@"SplashScreen" bundle:nil];
     [self.window setContentViewController: splashScreen];
-    [self closeInterfaceIfRunning];
+        //[self closeInterfaceIfRunning];
     
-    if (!self.waitingForInterfaceToTerminate) {
-        [self checkLoginStatus];
-    }
+        //if (!self.waitingForInterfaceToTerminate) {
+    [self checkLoginStatus];
+        //}
 }
 
 - (NSString*) getDownloadPathForContentAndScripts
@@ -105,8 +105,6 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
     if ([self isLoadedIn]) {
         Launcher* sharedLauncher = [Launcher sharedLauncher];
         [sharedLauncher setCurrentProcessState:CHECKING_UPDATE];
-        ProcessScreen* processScreen = [[ProcessScreen alloc] initWithNibName:@"ProcessScreen" bundle:nil];
-        [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: processScreen];
         [self.latestBuildRequest requestLatestBuildInfo];
     } else {
         [NSTimer scheduledTimerWithTimeInterval:2.0
@@ -146,6 +144,20 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
             [self checkLoginStatus];
         }
     }
+}
+
+- (BOOL) isInterfaceRunning
+{
+    NSWorkspace* workspace = [NSWorkspace sharedWorkspace];
+    NSArray* apps = [workspace runningApplications];
+    for (NSRunningApplication* app in apps) {
+        if ([[app bundleIdentifier] isEqualToString:@"com.highfidelity.interface"] ||
+            [[app bundleIdentifier] isEqualToString:@"com.highfidelity.interface-pr"]) {
+            return TRUE;
+        }
+    }
+    
+    return FALSE;
 }
 
 - (void) closeInterfaceIfRunning
@@ -271,10 +283,32 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 - (void) shouldDownloadLatestBuild:(BOOL) shouldDownload :(NSString*) downloadUrl
 {
     if (shouldDownload) {
-        [self.downloadInterface downloadInterface: downloadUrl];
+        // check for interface is running.
+        if ([self currentProccessState] == CHECKING_UPDATE && [self isInterfaceRunning]) {
+            [[Launcher sharedLauncher] setDownloadUrl:downloadUrl];
+            // show close interface
+        } else {
+            ProcessScreen* processScreen = [[ProcessScreen alloc] initWithNibName:@"ProcessScreen" bundle:nil];
+            [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: processScreen];
+            [self.downloadInterface downloadInterface: downloadUrl];
+        }
         return;
     }
-    [self launchInterface];
+    
+    
+    if ([self isInterfaceRunning]) {
+        
+    } else {
+        [self launchInterface];
+    }
+}
+
+-(void) setDownloadUrl:(NSString *)aDownloadUrl {
+    self.interfaceDownloadUrl = aDownloadUrl;
+}
+
+-(NSString*) getDownloadUrl {
+    return self.interfaceDownloadUrl;
 }
 
 -(void)onSplashScreenTimerFinished:(NSTimer *)timer
