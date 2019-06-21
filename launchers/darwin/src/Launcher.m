@@ -5,6 +5,7 @@
 #import "DisplayNameScreen.h"
 #import "ProcessScreen.h"
 #import "ErrorViewController.h"
+#import "CloseInterfaceController.h"
 #import "Settings.h"
 
 @interface Launcher ()
@@ -51,26 +52,22 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
                                                            selector:@selector(didTerminateApp:)
                                                                name:NSWorkspaceDidTerminateApplicationNotification
                                                              object:nil];
-    
+
     SplashScreen* splashScreen = [[SplashScreen alloc] initWithNibName:@"SplashScreen" bundle:nil];
     [self.window setContentViewController: splashScreen];
-        //[self closeInterfaceIfRunning];
-    
-        //if (!self.waitingForInterfaceToTerminate) {
     [self checkLoginStatus];
-        //}
 }
 
 - (NSString*) getDownloadPathForContentAndScripts
 {
     NSString* filePath = [[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0]
                           stringByAppendingString:@"/Launcher/"];
-    
+
     if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
         NSError * error = nil;
         [[NSFileManager defaultManager] createDirectoryAtPath:filePath withIntermediateDirectories:TRUE attributes:nil error:&error];
     }
-    
+
     return filePath;
 }
 
@@ -84,10 +81,10 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
     NSTask* task = [[NSTask alloc] init];
     task.launchPath = @"/usr/bin/unzip";
     task.arguments = @[@"-o", @"-d", destination, file];
-    
+
     [task launch];
     [task waitUntilExit];
-    
+
     if (DELETE_ZIP_FILES) {
         NSFileManager* fileManager = [NSFileManager defaultManager];
         [fileManager removeItemAtPath:file error:NULL];
@@ -102,18 +99,11 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 
 - (void) checkLoginStatus
 {
-    if ([self isLoadedIn]) {
-        Launcher* sharedLauncher = [Launcher sharedLauncher];
-        [sharedLauncher setCurrentProcessState:CHECKING_UPDATE];
-        [self.latestBuildRequest requestLatestBuildInfo];
-    } else {
-        [NSTimer scheduledTimerWithTimeInterval:2.0
-                                         target:self
-                                       selector:@selector(onSplashScreenTimerFinished:)
-                                       userInfo:nil
-                                        repeats:NO];
-    }
-    [[NSApplication sharedApplication] activateIgnoringOtherApps:TRUE];
+    [NSTimer scheduledTimerWithTimeInterval:2.0
+                                     target:self
+                                     selector:@selector(onSplashScreenTimerFinished:)
+                                     userInfo:nil
+                                     repeats:NO];
 }
 
 - (void) setDownloadContextFilename:(NSString *)aFilename
@@ -156,19 +146,33 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
             return TRUE;
         }
     }
-    
+
     return FALSE;
 }
 
-- (void) closeInterfaceIfRunning
+- (BOOL) closeInterfaceIfRunning
 {
+    NSWorkspace* workspace = [NSWorkspace sharedWorkspace];
+    NSArray* apps = [workspace runningApplications];
+    BOOL closeInterfaceSuccessful = TRUE;
+    for (NSRunningApplication* app in apps) {
+        if ([[app bundleIdentifier] isEqualToString:@"com.highfidelity.interface"] ||
+            [[app bundleIdentifier] isEqualToString:@"com.highfidelity.interface-pr"]) {
+            closeInterfaceSuccessful = [app terminate];
+            self.waitingForInterfaceToTerminate = true;
+        }
+    }
+
+    return FALSE;//closeInterfaceSuccessful;
+}
+
+- (void) bringFocusOnInterface {
     NSWorkspace* workspace = [NSWorkspace sharedWorkspace];
     NSArray* apps = [workspace runningApplications];
     for (NSRunningApplication* app in apps) {
         if ([[app bundleIdentifier] isEqualToString:@"com.highfidelity.interface"] ||
             [[app bundleIdentifier] isEqualToString:@"com.highfidelity.interface-pr"]) {
-            [app terminate];
-            self.waitingForInterfaceToTerminate = true;
+            [app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
         }
     }
 }
@@ -187,7 +191,7 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
     self.domainURL = aDomainURL;
     self.domainContentUrl = aDomainContentUrl;
     self.domainScriptsUrl = aDomainScriptsUrl;
-    
+
     [[Settings sharedSettings] setDomainUrl:aDomainURL];
 }
 
@@ -285,8 +289,17 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
     if (shouldDownload) {
         // check for interface is running.
         if ([self currentProccessState] == CHECKING_UPDATE && [self isInterfaceRunning]) {
-            [[Launcher sharedLauncher] setDownloadUrl:downloadUrl];
-            // show close interface
+
+            if ([self closeInterfaceIfRunning]) {
+                ProcessScreen* processScreen = [[ProcessScreen alloc] initWithNibName:@"ProcessScreen" bundle:nil];
+                [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: processScreen];
+                [self.downloadInterface downloadInterface: downloadUrl];
+            } else {
+                [[Launcher sharedLauncher] setDownloadUrl:downloadUrl];
+                CloseInterfaceController* closeInterfaceController = [[CloseInterfaceController alloc] initWithNibName:@"CloseInterface" bundle:nil];
+                [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: closeInterfaceController];
+            }
+            return;
         } else {
             ProcessScreen* processScreen = [[ProcessScreen alloc] initWithNibName:@"ProcessScreen" bundle:nil];
             [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: processScreen];
@@ -294,10 +307,33 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
         }
         return;
     }
-    
-    
+
+    ProcessState state = [self currentProccessState];
+    if (state == CHECKING_UPDATE) {
+        [self setCurrentProcessState:RUNNING_INTERFACE_AFTER_NO_UPDATE];
+    } else if (state == DOWNLOADING_INTERFACE) {
+        [self setCurrentProcessState:RUNNING_INTERFACE_AFTER_DOWNLOAD];
+    }
+    ProcessScreen* processScreen = [[ProcessScreen alloc] initWithNibName:@"ProcessScreen" bundle:nil];
+    [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: processScreen];
+
+    [NSTimer scheduledTimerWithTimeInterval:1.0
+                                     target:self
+                                     selector:@selector(onFinalScreenTimerFinished:)
+                                     userInfo:nil
+                                     repeats:NO];
+}
+
+- (void) continueWithDownload
+{
+     [self.downloadInterface downloadInterface: [self getDownloadUrl]];
+}
+
+- (void) onFinalScreenTimerFinished:(NSTimer*)timer
+{
     if ([self isInterfaceRunning]) {
-        
+        [self bringFocusOnInterface];
+        [NSApp terminate:self];
     } else {
         [self launchInterface];
     }
@@ -314,7 +350,14 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 -(void)onSplashScreenTimerFinished:(NSTimer *)timer
 {
     [[NSApplication sharedApplication] activateIgnoringOtherApps:TRUE];
-    [self showLoginScreen];
+    if ([self isLoadedIn]) {
+        Launcher* sharedLauncher = [Launcher sharedLauncher];
+        [sharedLauncher setCurrentProcessState:CHECKING_UPDATE];
+        [self.latestBuildRequest requestLatestBuildInfo];
+    } else {
+        [[NSApplication sharedApplication] activateIgnoringOtherApps:TRUE];
+        [self showLoginScreen];
+    }
 }
 
 -(void)setCurrentProcessState:(ProcessState)aProcessState
@@ -360,14 +403,14 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 - (void) launchInterface
 {
     NSString* launcherPath = [[self getLauncherPath] stringByAppendingString:@"HQ Launcher"];
-    
+
     [[Settings sharedSettings] setLauncherPath:launcherPath];
     [[Settings sharedSettings] save];
     NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
     NSURL *url = [NSURL fileURLWithPath:[workspace fullPathForApplication:[[self getAppPath] stringByAppendingString:@"interface.app/Contents/MacOS/interface"]]];
 
     NSError *error = nil;
-    
+
     NSString* contentPath = [[self getDownloadPathForContentAndScripts] stringByAppendingString:@"content"];
     NSString* displayName = [ self displayName];
     NSString* scriptsPath = [[self getAppPath] stringByAppendingString:@"interface.app/Contents/Resources/scripts/simplifiedUI/"];
@@ -395,7 +438,7 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
                             @"--no-launcher", nil];
     }
     [workspace launchApplicationAtURL:url options:NSWorkspaceLaunchNewInstance configuration:[NSDictionary dictionaryWithObject:arguments forKey:NSWorkspaceLaunchConfigurationArguments] error:&error];
-    
+
     [NSApp terminate:self];
 }
 

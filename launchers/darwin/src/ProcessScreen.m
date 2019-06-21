@@ -31,6 +31,10 @@
             [self.boldStatus setStringValue:@"You're good to go!"];
             [self.smallStatus setStringValue:@"Thanks for being patient."];
             break;
+        case RUNNING_INTERFACE_AFTER_NO_UPDATE:
+            [self.boldStatus setStringValue:@"You're good to go!"];
+            [self.smallStatus setStringValue:@""];
+            break;
         default:
             break;
     }
@@ -40,12 +44,14 @@
 
     self.imageRotation = 0;
     //[self.voxelImage setFrameCenterRotation:90];
-    
-    [NSTimer scheduledTimerWithTimeInterval:0.016
+    ProcessState state = [sharedLauncher currentProccessState];
+    if (state == DOWNLOADING_INTERFACE || state == CHECKING_UPDATE) {
+        [NSTimer scheduledTimerWithTimeInterval:0.016
                                          target:self
                                        selector:@selector(rotateView:)
                                        userInfo:nil
                                         repeats:YES];
+    }
 }
 
 - (void) rotateView:(NSTimer *)timer{

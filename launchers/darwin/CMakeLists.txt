@@ -28,6 +28,8 @@ set(src_files
   src/OrganizationRequest.h
   src/ErrorViewController.h
   src/ErrorViewController.m
+  src/CloseInterfaceController.h
+  src/CloseInterfaceController.m
   src/Settings.h
   src/Settings.m
   src/LaunchInterface.h
@@ -39,6 +41,7 @@ set(src_files
   nib/ErrorScreen.xib
   nib/LoginScreen.xib
   nib/ProcessScreen.xib
+  nib/CloseInterface.xib
   nib/DisplayNameScreen.xib)
 
 set(APP_NAME "HQ Launcher")

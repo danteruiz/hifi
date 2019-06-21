@@ -11,7 +11,8 @@ typedef enum processStateTypes
     DOWNLOADING_INTERFACE = 0,
     RUNNING_INTERFACE_AFTER_DOWNLOAD,
     CHECKING_UPDATE,
-    RUNNING_INTERFACE_AFTER_UPDATE
+    RUNNING_INTERFACE_AFTER_UPDATE,
+    RUNNING_INTERFACE_AFTER_NO_UPDATE
 } ProcessState;
 
 typedef enum LoginErrorTypes
@@ -74,6 +75,7 @@ typedef enum LoginErrorTypes
 - (void) setDownloadScriptsFilename:(NSString*) aFilename;
 - (void) setTokenString:(NSString*) aToken;
 - (void) setDownloadUrl:(NSString*) aDownloadUrl;
+- (void) continueWithDownload;
 - (NSString*) getDownloadUrl;
 - (NSString*) getTokenString;
 - (NSString*) getDownloadContentFilename;
