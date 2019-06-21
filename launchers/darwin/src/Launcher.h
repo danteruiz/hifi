@@ -15,6 +15,15 @@ typedef enum processStateTypes
     RUNNING_INTERFACE_AFTER_NO_UPDATE
 } ProcessState;
 
+typedef enum AppStateTypes
+{
+    SPLASH_SCREEN = 0,
+    LOGIN_SCREEN,
+    DISPLAY_NAME_SCREEN,
+    PROCESS_SCREEN,
+    CLOSE_INTERFACE_SCREEN
+} AppState;
+
 typedef enum LoginErrorTypes
 {
     NONE = 0,
@@ -46,7 +55,9 @@ typedef enum LoginErrorTypes
 @property (nonatomic) BOOL waitingForCredentialReponse;
 @property (nonatomic) BOOL gotCredentialResponse;
 @property (nonatomic) BOOL waitingForInterfaceToTerminate;
+@property (nonatomic) BOOL continueToLogin;
 @property (nonatomic, assign, readwrite) ProcessState processState;
+@property (nonatomic, assign, readwrite) AppState appState;
 @property (nonatomic, assign, readwrite) LoginError loginError;
 
 - (void) displayNameEntered:(NSString*)aDisplayName;
@@ -63,6 +74,8 @@ typedef enum LoginErrorTypes
 - (ProcessState) currentProccessState;
 - (void) setCurrentProcessState:(ProcessState) aProcessState;
 - (void) setLoginErrorState:(LoginError) aLoginError;
+- (AppState) currentAppState;
+- (void) setCurrentAppState:(AppState) aAppState;
 - (LoginError) getLoginErrorState;
 - (void) shouldDownloadLatestBuild:(BOOL) shouldDownload :(NSString*) downloadUrl;
 - (void) interfaceFinishedDownloading;
@@ -70,6 +83,7 @@ typedef enum LoginErrorTypes
 - (void) launchInterface;
 - (void) extractZipFileAtDestination:(NSString*) destination :(NSString*) file;
 - (BOOL) isWaitingForInterfaceToTerminate;
+- (void) setIsWaitingForInterfaceToTerminate:(BOOL) isTerminated;
 - (void) setDownloadFilename:(NSString*) aFilename;
 - (void) setDownloadContextFilename:(NSString*) aFilename;
 - (void) setDownloadScriptsFilename:(NSString*) aFilename;
@@ -84,6 +98,8 @@ typedef enum LoginErrorTypes
 - (BOOL) isLoadedIn;
 - (NSString*) getAppPath;
 - (BOOL) isInterfaceRunning;
+- (BOOL) getShouldContinueToLogin;
+- (void) setShouldContinueToLogin:(BOOL) shouldContinueToLogin;
 
 + (id) sharedLauncher;
 @end

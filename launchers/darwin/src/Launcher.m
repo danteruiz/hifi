@@ -42,6 +42,7 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
         self.waitingForInterfaceToTerminate = FALSE;
         self.userToken = nil;
         self.processState = DOWNLOADING_INTERFACE;
+        self.appState = SPLASH_SCREEN;
     }
     return self;
 }
@@ -127,11 +128,16 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 }
 
 - (void)didTerminateApp:(NSNotification *)notification {
-    if (self.waitingForInterfaceToTerminate) {
+    Launcher* launcher = [Launcher sharedLauncher];
+    if ([launcher isWaitingForInterfaceToTerminate]) {
         NSString* appName = [notification.userInfo valueForKey:@"NSApplicationName"];
         if ([appName isEqualToString:@"interface"]) {
-            self.waitingForInterfaceToTerminate = FALSE;
-            [self checkLoginStatus];
+            [launcher setIsWaitingForInterfaceToTerminate: FALSE];
+            if ([[Launcher sharedLauncher] getShouldContinueToLogin]) {
+                [self showLoginScreen];
+            } else if ([launcher currentAppState] != CLOSE_INTERFACE_SCREEN) {
+                [[Launcher sharedLauncher] continueWithDownload];
+            }
         }
     }
 }
@@ -159,11 +165,11 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
         if ([[app bundleIdentifier] isEqualToString:@"com.highfidelity.interface"] ||
             [[app bundleIdentifier] isEqualToString:@"com.highfidelity.interface-pr"]) {
             closeInterfaceSuccessful = [app terminate];
-            self.waitingForInterfaceToTerminate = true;
+            [[Launcher sharedLauncher] setIsWaitingForInterfaceToTerminate: TRUE];
         }
     }
 
-    return FALSE;//closeInterfaceSuccessful;
+    return closeInterfaceSuccessful;
 }
 
 - (void) bringFocusOnInterface {
@@ -175,6 +181,10 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
             [app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
         }
     }
+}
+- (void) setIsWaitingForInterfaceToTerminate:(BOOL) isTerminated
+{
+    self.waitingForInterfaceToTerminate = isTerminated;
 }
 
 - (BOOL) isWaitingForInterfaceToTerminate {
@@ -242,6 +252,26 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
     }
 }
 
+- (BOOL) getShouldContinueToLogin
+{
+    return self.continueToLogin;
+}
+
+- (void) setShouldContinueToLogin:(BOOL) shouldContinueToLogin
+{
+    self.continueToLogin = shouldContinueToLogin;
+}
+
+- (void) setCurrentAppState:(AppState) aAppState
+{
+    self.appState = aAppState;
+}
+
+- (AppState) currentAppState
+{
+    return self.appState;
+}
+
 - (void) interfaceFinishedDownloading
 {
     if (self.processState == DOWNLOADING_INTERFACE) {
@@ -280,6 +310,7 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 
 -(void) showLoginScreen
 {
+    [[Launcher sharedLauncher] setShouldContinueToLogin:FALSE];
     LoginScreen* loginScreen = [[LoginScreen alloc] initWithNibName:@"LoginScreen" bundle:nil];
     [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: loginScreen];
 }
@@ -287,15 +318,20 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 - (void) shouldDownloadLatestBuild:(BOOL) shouldDownload :(NSString*) downloadUrl
 {
     if (shouldDownload) {
-        // check for interface is running.
-        if ([self currentProccessState] == CHECKING_UPDATE && [self isInterfaceRunning]) {
+        Launcher* launcher = [Launcher sharedLauncher];
+        if ([self isInterfaceRunning]) {
 
             if ([self closeInterfaceIfRunning]) {
-                ProcessScreen* processScreen = [[ProcessScreen alloc] initWithNibName:@"ProcessScreen" bundle:nil];
-                [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: processScreen];
-                [self.downloadInterface downloadInterface: downloadUrl];
+                if (![launcher isWaitingForInterfaceToTerminate]) {
+                    ProcessScreen* processScreen = [[ProcessScreen alloc] initWithNibName:@"ProcessScreen" bundle:nil];
+                    [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: processScreen];
+                    [self.downloadInterface downloadInterface: downloadUrl];
+                } else {
+                    [launcher setDownloadUrl:downloadUrl];
+                }
             } else {
-                [[Launcher sharedLauncher] setDownloadUrl:downloadUrl];
+                [launcher setDownloadUrl:downloadUrl];
+                [launcher setCurrentAppState:CLOSE_INTERFACE_SCREEN];
                 CloseInterfaceController* closeInterfaceController = [[CloseInterfaceController alloc] initWithNibName:@"CloseInterface" bundle:nil];
                 [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: closeInterfaceController];
             }
@@ -326,7 +362,9 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 
 - (void) continueWithDownload
 {
-     [self.downloadInterface downloadInterface: [self getDownloadUrl]];
+    ProcessScreen* processScreen = [[ProcessScreen alloc] initWithNibName:@"ProcessScreen" bundle:nil];
+    [[[[NSApplication sharedApplication] windows] objectAtIndex:0] setContentViewController: processScreen];
+    [self.downloadInterface downloadInterface: [self getDownloadUrl]];
 }
 
 - (void) onFinalScreenTimerFinished:(NSTimer*)timer
@@ -350,12 +388,13 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 -(void)onSplashScreenTimerFinished:(NSTimer *)timer
 {
     [[NSApplication sharedApplication] activateIgnoringOtherApps:TRUE];
+    Launcher* sharedLauncher = [Launcher sharedLauncher];
     if ([self isLoadedIn]) {
-        Launcher* sharedLauncher = [Launcher sharedLauncher];
         [sharedLauncher setCurrentProcessState:CHECKING_UPDATE];
+        [sharedLauncher setShouldContinueToLogin:FALSE];
         [self.latestBuildRequest requestLatestBuildInfo];
     } else {
-        [[NSApplication sharedApplication] activateIgnoringOtherApps:TRUE];
+        [sharedLauncher setShouldContinueToLogin:TRUE];
         [self showLoginScreen];
     }
 }

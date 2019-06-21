@@ -31,10 +31,19 @@
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="BM1-Au-WAk"/>
                 </imageView>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="y7S-kd-gbZ">
+                    <rect key="frame" x="57" y="122" width="400" height="28"/>
+                    <autoresizingMask key="autoresizingMask"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="Updates to HQ may be available." id="ZjW-Rp-9hX">
+                        <font key="font" metaFont="system" size="18"/>
+                        <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="JAI-Ug-K3d" customClass="HFButton">
-                    <rect key="frame" x="204" y="52" width="106" height="30"/>
+                    <rect key="frame" x="204" y="20" width="106" height="30"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <buttonCell key="cell" type="square" title="Continue" bezelStyle="shadowlessSquare" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="YGA-ij-MuM">
+                    <buttonCell key="cell" type="square" title="Ok" bezelStyle="shadowlessSquare" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="YGA-ij-MuM">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -42,12 +51,12 @@
                         <action selector="closeAndUpdate:" target="7sY-Os-s93" id="Jnf-8Y-rfC"/>
                     </connections>
                 </button>
-                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="y7S-kd-gbZ">
-                    <rect key="frame" x="57" y="119" width="400" height="34"/>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iGj-GG-819">
+                    <rect key="frame" x="57" y="69" width="400" height="52"/>
                     <autoresizingMask key="autoresizingMask"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="Please close Interface to get latest update." id="ZjW-Rp-9hX">
+                    <textFieldCell key="cell" alignment="center" title="Please close HQ so we can ensure that you are running the latest version" id="0cF-Pc-pUV">
                         <font key="font" metaFont="system" size="18"/>
-                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
@@ -57,6 +66,9 @@
         <customObject id="7sY-Os-s93" customClass="CloseInterfaceController">
             <connections>
                 <outlet property="backgroundImage" destination="P8g-W0-TGK" id="bmr-fk-w2T"/>
+                <outlet property="bodyText" destination="iGj-GG-819" id="jcK-zZ-Da5"/>
+                <outlet property="button" destination="JAI-Ug-K3d" id="O3c-wc-GgJ"/>
+                <outlet property="headerText" destination="y7S-kd-gbZ" id="A9i-nV-sct"/>
                 <outlet property="smallLogo" destination="vNW-Tr-TLx" id="zqu-Ce-Cz1"/>
                 <outlet property="voxelImage" destination="kng-BA-EVY" id="GGT-5B-SfD"/>
             </connections>
