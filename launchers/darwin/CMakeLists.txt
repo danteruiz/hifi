@@ -78,12 +78,31 @@ function(set_from_env _RESULT_NAME _ENV_VAR_NAME _DEFAULT_VALUE)
   endif()
 endfunction()
 
-  set_packaging_parameters()
+set_packaging_parameters()
 
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${src_files})
 add_executable("updater" ${updater_src_files})
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${APP_NAME}
-  MACOSX_BUNDLE_BUNDLE_NAME ${APP_NAME})
+
+set_from_env(XCODE_DEVELOPMENT_TEAM XCODE_DEVELOPMENT_TEAM "")
+if ("${XCODE_DEVELOPMENT_TEAM}" STREQUAL "")
+    message(WARNING "XCODE_DEVELOPMENT_TEAM environmental variable is not set. Not signing build.")
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${APP_NAME}
+      MACOSX_BUNDLE_BUNDLE_NAME ${APP_NAME}
+    )
+else()
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${APP_NAME}
+      MACOSX_BUNDLE_BUNDLE_NAME ${APP_NAME}
+      XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "HQ Launcher.entitlements"
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Mac Developer"
+      XCODE_ATTRIBUTE_CODE_SIGN_INJECT_BASE_ENTITLEMENTS NO
+      XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+      XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${XCODE_DEVELOPMENT_TEAM}"
+      XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES
+      XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--timestamp"
+      XCODE_ATTRIBUTE_PROVISIONING_PROFILE_SPECIFIER ""
+    )
+endif()
+
 set_from_env(LAUNCHER_HMAC_SECRET LAUNCHER_HMAC_SECRET "")
 if ("${LAUNCHER_HMAC_SECRET}" STREQUAL "")
     message(FATAL_ERROR "LAUNCHER_HMAC_SECRET is not set")
