@@ -448,6 +448,7 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
     NSArray* arguments;
     if (userToken != nil) {
         arguments = [NSArray arrayWithObjects:
+                        [url path],
                         @"--url" , domainUrl ,
                         @"--tokens", userToken,
                         @"--cache", contentPath,
@@ -455,15 +456,16 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
                         @"--defaultScriptsOverride", scriptsPath,
                         @"--setBookmark", homeBookmark,
                         @"--no-updater",
-                        @"--no-launcher", nil];
+                        @"--no-launcher", (char*)0];
     } else {
         arguments = [NSArray arrayWithObjects:
+                            [url path],
                             @"--url" , domainUrl,
                             @"--cache", contentPath,
                             @"--defaultScriptsOverride", scriptsPath,
                             @"--setBookmark", homeBookmark,
                             @"--no-updater",
-                            @"--no-launcher", nil];
+                            @"--no-launcher", (char*)0];
     }
 
     NSTask *task = [[NSTask alloc] init];
