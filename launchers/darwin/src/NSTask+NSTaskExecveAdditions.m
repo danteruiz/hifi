@@ -5,7 +5,7 @@
 char **
 toCArray(NSArray<NSString *> *array)
 {
-    char **cArray = (char **) malloc(sizeof(char *) * [array count]);
+    char **cArray = (char **) malloc(sizeof(char *) * ([array count] + 1));
     if (cArray == NULL) {
         NSException *exception = [NSException
                                   exceptionWithName:@"MemoryException"
@@ -13,9 +13,19 @@ toCArray(NSArray<NSString *> *array)
                                   userInfo:nil];
         @throw exception;
     }
+
+    char *str;
     for (int i = 0; i < [array count]; i++) {
-        asprintf(&cArray[i], "%s", [array[i] UTF8String]);
+        str = (char *) [array[i] UTF8String];
+        if (str == NULL) {
+            NSException *exception = [NSException exceptionWithName:@"NULLStringException"
+                                                             reason:@"UTF8String was NULL"
+                                                           userInfo:nil];
+            @throw exception;
+        }
+        asprintf(&cArray[i], "%s", str);
     }
+    cArray[[array count]] = NULL;
     return cArray;
 }
 
@@ -25,7 +35,6 @@ toCArray(NSArray<NSString *> *array)
     char *path;
     asprintf(&path, "%s", [[self launchPath] UTF8String]);
     char **args = toCArray([self arguments]);
-
     NSMutableArray *env = [[NSMutableArray alloc] init];
     NSDictionary* environvment = [[NSProcessInfo processInfo] environment];
     for (NSString* key in environvment) {
@@ -38,7 +47,6 @@ toCArray(NSArray<NSString *> *array)
     // It will only return if it fails to replace the current process.
     chdir(dirname(path));
     execve(path, (char * const *)args, envp);
-
     // If we're here `execve` failed. :(
     for (int i = 0; i < [[self arguments] count]; i++) {
         free((void *) args[i]);

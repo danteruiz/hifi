@@ -456,7 +456,7 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
                         @"--defaultScriptsOverride", scriptsPath,
                         @"--setBookmark", homeBookmark,
                         @"--no-updater",
-                        @"--no-launcher", (char*)0];
+                        @"--no-launcher", NULL];
     } else {
         arguments = [NSArray arrayWithObjects:
                             [url path],
@@ -465,7 +465,7 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
                             @"--defaultScriptsOverride", scriptsPath,
                             @"--setBookmark", homeBookmark,
                             @"--no-updater",
-                            @"--no-launcher", (char*)0];
+                            @"--no-launcher", NULL];
     }
 
     NSTask *task = [[NSTask alloc] init];
