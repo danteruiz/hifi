@@ -55,7 +55,6 @@
     }
     NSLog(@"finished extracting Launcher file");
 
-
     [[Launcher sharedLauncher] runAutoupdater];
 }
 

@@ -115,6 +115,7 @@ static BOOL const DELETE_ZIP_FILES = TRUE;
 
 - (BOOL) extractZipFileAtDestination:(NSString *)destination :(NSString*)file
 {
+    
     NSTask* task = [[NSTask alloc] init];
     task.launchPath = @"/usr/bin/unzip";
     task.arguments = @[@"-o", @"-d", destination, file];
