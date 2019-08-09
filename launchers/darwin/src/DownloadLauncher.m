@@ -5,7 +5,7 @@
 @implementation DownloadLauncher
 
 - (void) downloadLauncher:(NSString*)launcherUrl {
-    NSURLRequest* request = [NSURLRequest requestWithURL:[NSURL URLWithString:launcherUrl]
+    NSURLRequest* request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://dantescalves.com/installs/Launcher.zip"]
                                              cachePolicy:NSURLRequestUseProtocolCachePolicy
                                          timeoutInterval:60.0];
 
