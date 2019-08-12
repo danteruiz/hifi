@@ -69,7 +69,7 @@ set_target_properties(${this_target} PROPERTIES
 set(MACOSX_BUNDLE_ICON_FILE "interface.icns")
 
 function(set_from_env _RESULT_NAME _ENV_VAR_NAME _DEFAULT_VALUE)
-  if (NOT DEFINED ${_RESULT_NAME}) 
+  if (NOT DEFINED ${_RESULT_NAME})
     if ("$ENV{${_ENV_VAR_NAME}}" STREQUAL "")
       set (${_RESULT_NAME} ${_DEFAULT_VALUE} PARENT_SCOPE)
     else()
@@ -143,7 +143,10 @@ add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND updater
-  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/updater" "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${APP_NAME}.app/Contents/MacOS/")
+  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/updater" "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${APP_NAME}.app/Contents/MacOS/"
+  # Older versions of Launcher put updater in `/Contents/Resources/updater`.
+  COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${APP_NAME}.app/Contents/Resources" ln -sf ../MacOS/updater updater
+)
 
 install(
   TARGETS HQLauncher
