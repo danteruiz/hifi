@@ -292,7 +292,7 @@ static const uint32_t MAX_CONCURRENT_RESOURCE_DOWNLOADS = 4;
 // For processing on QThreadPool, we target a number of threads after reserving some
 // based on how many are being consumed by the application and the display plugin.  However,
 // we will never drop below the 'min' value
-static const int MIN_PROCESSING_THREAD_POOL_SIZE = 1;
+static const int MIN_PROCESSING_THREAD_POOL_SIZE = 2;
 
 static const QString SNAPSHOT_EXTENSION = ".jpg";
 static const QString JPG_EXTENSION = ".jpg";
@@ -2761,7 +2761,6 @@ void Application::cleanupBeforeQuit() {
     }
 
     getEntities()->shutdown(); // tell the entities system we're shutting down, so it will stop running scripts
-    getEntities()->clear();
 
     // Clear any queued processing (I/O, FBX/OBJ/Texture parsing)
     QThreadPool::globalInstance()->clear();
@@ -4236,12 +4235,43 @@ bool Application::event(QEvent* event) {
 }
 
 bool Application::eventFilter(QObject* object, QEvent* event) {
+    auto eventType = event->type();
 
-    if (_aboutToQuit && event->type() != QEvent::DeferredDelete && event->type() != QEvent::Destroy) {
+    if (_aboutToQuit && eventType != QEvent::DeferredDelete && eventType != QEvent::Destroy) {
         return true;
     }
 
-    auto eventType = event->type();
+#if defined(Q_OS_MAC)
+    // On Mac OS, Cmd+LeftClick is treated as a RightClick (more specifically, it seems to
+    // be Cmd+RightClick without the modifier being dropped). Starting in Qt 5.12, only
+    // on Mac, the MouseButtonRelease event for these mouse presses is sent to the top
+    // level QWidgetWindow, but are not propagated further. This means that the Application
+    // will see a MouseButtonPress, but no MouseButtonRelease, causing the client to get
+    // stuck in "mouse-look." The cause of the problem is in the way QWidgetWindow processes
+    // events where QMouseEvent::button() is not equal to QMouseEvent::buttons(). In this case
+    // QMouseEvent::button() is Qt::RightButton, while QMouseEvent::buttons() is (correctly?)
+    // Qt::LeftButton.
+    //
+    // The change here gets around this problem by capturing these
+    // pseudo-RightClicks, and re-emitting them as "pure" RightClicks, where
+    // QMouseEvent::button() == QMouseEvent::buttons() == Qt::RightButton.
+    //
+    if (eventType == QEvent::MouseButtonPress) {
+        auto mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::RightButton
+            && mouseEvent->buttons() == Qt::LeftButton
+            && mouseEvent->modifiers() == Qt::MetaModifier) {
+
+            QMouseEvent* newEvent = new QMouseEvent(
+                    QEvent::MouseButtonPress, mouseEvent->localPos(), mouseEvent->windowPos(),
+                    mouseEvent->screenPos(), Qt::RightButton, Qt::MouseButtons(Qt::RightButton),
+                    mouseEvent->modifiers());
+            QApplication::postEvent(object, newEvent);
+            return true;
+        }
+    }
+#endif
+
     if (eventType == QEvent::KeyPress || eventType == QEvent::KeyRelease || eventType == QEvent::MouseMove) {
         getRefreshRateManager().resetInactiveTimer();
     }
@@ -4418,8 +4448,6 @@ void Application::keyPressEvent(QKeyEvent* event) {
                 } else if (isMeta) {
                     auto dialogsManager = DependencyManager::get<DialogsManager>();
                     dialogsManager->toggleAddressBar();
-                } else if (isShifted) {
-                    Menu::getInstance()->triggerOption(MenuOption::LodTools);
                 }
                 break;
 
@@ -6817,8 +6845,8 @@ void Application::updateRenderArgs(float deltaTime) {
                 _viewFrustum.setProjection(adjustedProjection);
                 _viewFrustum.calculate();
             }
-            appRenderArgs._renderArgs = RenderArgs(_graphicsEngine.getGPUContext(), lodManager->getOctreeSizeScale(),
-                lodManager->getBoundaryLevelAdjust(), lodManager->getLODAngleHalfTan(), RenderArgs::DEFAULT_RENDER_MODE,
+            appRenderArgs._renderArgs = RenderArgs(_graphicsEngine.getGPUContext(), lodManager->getVisibilityDistance(),
+                lodManager->getBoundaryLevelAdjust(), lodManager->getLODHalfAngleTan(), RenderArgs::DEFAULT_RENDER_MODE,
                 RenderArgs::MONO, RenderArgs::DEFERRED, RenderArgs::RENDER_DEBUG_NONE);
             appRenderArgs._renderArgs._scene = getMain3DScene();
 

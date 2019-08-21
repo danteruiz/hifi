@@ -17,8 +17,6 @@ import "./audio" as AudioSettings
 import "./general" as GeneralSettings
 import "./vr" as VrSettings
 import "./dev" as DevSettings
-import "./about" as AboutSettings
-
 Rectangle {
     property string activeTabView: "generalTabView"
     id: root
@@ -45,6 +43,15 @@ Rectangle {
                     tabListView.currentIndex = 2;
                     root.activeTabView = "vrTabView";
                 }
+            }
+        }
+    }
+
+    onActiveTabViewChanged: {
+        for (var i = 0; i < tabListModel.count; i++) {
+            if (tabListModel.get(i).tabViewName === activeTabView) {
+                tabListView.currentIndex = i;
+                return;
             }
         }
     }
@@ -76,10 +83,6 @@ Rectangle {
             ListElement {
                 tabTitle: "VR"
                 tabViewName: "vrTabView"
-            }
-            ListElement {
-                tabTitle: "About"
-                tabViewName: "aboutTabView"
             }
             ListElement {
                 tabTitle: "Dev"
@@ -138,7 +141,6 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        tabListView.currentIndex = index;
                         root.activeTabView = model.tabViewName;
                     }
                 }
@@ -182,12 +184,6 @@ Rectangle {
             anchors.fill: parent
         }
 
-        AboutSettings.About {
-            id: aboutTabViewContainer
-            visible: activeTabView === "aboutTabView"
-            anchors.fill: parent
-        }
-
         SimplifiedControls.VerticalScrollBar {
             parent: {
                 if (activeTabView === "generalTabView") {
@@ -198,8 +194,6 @@ Rectangle {
                     vrTabViewContainer
                 } else if (activeTabView === "devTabView") {
                     devTabViewContainer
-                } else if (activeTabView === "aboutTabView") {
-                    aboutTabViewContainer
                 }
             }
         }
@@ -207,7 +201,24 @@ Rectangle {
 
 
     function fromScript(message) {
+        if (message.source !== "simplifiedUI.js") {
+            return;
+        }
+
         switch (message.method) {
+            case "goToSettingsTab":
+                var tabToGoTo = message.data.settingsTab;
+                switch (tabToGoTo) {
+                    case "audio":
+                        activeTabView = "audioTabView";
+                        break;
+
+                    default:
+                        console.log("A message was sent to the Settings window to change tabs, but an invalid tab was specified.");
+                        break;
+                }
+                break;
+
             default:
                 console.log('SettingsApp.qml: Unrecognized message from JS');
                 break;
