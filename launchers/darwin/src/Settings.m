@@ -35,7 +35,7 @@
     NSString* filePath = [self getFilePath];
     NSString* fileAtPath = [filePath stringByAppendingString:@"config.json"];
 
-    if ([[NSFileManager defaultManager] fileExistsAtPath:fileAtOldPath]) {
+    if ([[NSFileManager defaultManager] fileExistsAtPath:fileAtOldPath] && ![[NSFileManager defaultManager] fileExistsAtPath:fileAtPath]) {
         BOOL success = [[NSFileManager defaultManager] moveItemAtPath:fileAtOldPath toPath:fileAtPath error:nil];
         NSLog(@"move config to new location -> status: %@", success ? @"SUCCESS" : @"FAILED");
     }
